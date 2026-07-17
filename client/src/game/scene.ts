@@ -25,19 +25,53 @@ export async function createGameScene(engine: Engine, canvas: HTMLCanvasElement)
   const light = new HemisphericLight("light", new Vector3(0, 1, 0), scene);
   light.intensity = 0.9;
 
-  // Create ground
-  const ground = MeshBuilder.CreateGround("ground", { width: 50, height: 50 }, scene);
+  // Create ground with better terrain
+  const ground = MeshBuilder.CreateGround("ground", { width: 100, height: 100, subdivisions: 20 }, scene);
   const groundMaterial = new StandardMaterial("groundMaterial", scene);
-  groundMaterial.emissiveColor = new Color3(0.8, 0.7, 0.6); // Sand color
+  groundMaterial.emissiveColor = new Color3(0.85, 0.75, 0.65); // Sand color
   ground.material = groundMaterial;
 
-  // Create some simple obstacles
-  for (let i = 0; i < 5; i++) {
-    const box = MeshBuilder.CreateBox("obstacle", { size: 2 }, scene);
-    box.position = new Vector3(Math.random() * 30 - 15, 1, Math.random() * 30 - 15);
-    const material = new StandardMaterial("obstacleMaterial", scene);
-    material.emissiveColor = new Color3(0.5, 0.5, 0.5); // Gray
-    box.material = material;
+  // Create buildings (boxes with different sizes)
+  const buildingPositions = [
+    { x: -20, z: -20, size: 3 },
+    { x: 20, z: -20, size: 4 },
+    { x: -20, z: 20, size: 2 },
+    { x: 20, z: 20, size: 3.5 },
+    { x: 0, z: 0, size: 2.5 },
+  ];
+
+  for (const pos of buildingPositions) {
+    const building = MeshBuilder.CreateBox(`building_${pos.x}_${pos.z}`, { size: pos.size }, scene);
+    building.position = new Vector3(pos.x, pos.size / 2, pos.z);
+    const material = new StandardMaterial(`buildingMaterial_${pos.x}`, scene);
+    material.emissiveColor = new Color3(0.6, 0.55, 0.5); // Tan/brown
+    building.material = material;
+  }
+
+  // Add trees (cylinders for trunks, spheres for foliage)
+  const treePositions = [
+    { x: -30, z: -30 },
+    { x: 30, z: -30 },
+    { x: -30, z: 30 },
+    { x: 30, z: 30 },
+    { x: -15, z: 0 },
+    { x: 15, z: 0 },
+  ];
+
+  for (const pos of treePositions) {
+    // Tree trunk
+    const trunk = MeshBuilder.CreateCylinder(`trunk_${pos.x}_${pos.z}`, { height: 3, diameter: 0.5 }, scene);
+    trunk.position = new Vector3(pos.x, 1.5, pos.z);
+    const trunkMaterial = new StandardMaterial(`trunkMaterial_${pos.x}`, scene);
+    trunkMaterial.emissiveColor = new Color3(0.4, 0.3, 0.2); // Brown
+    trunk.material = trunkMaterial;
+
+    // Tree foliage
+    const foliage = MeshBuilder.CreateSphere(`foliage_${pos.x}_${pos.z}`, { diameter: 4 }, scene);
+    foliage.position = new Vector3(pos.x, 4, pos.z);
+    const foliageMaterial = new StandardMaterial(`foliageMaterial_${pos.x}`, scene);
+    foliageMaterial.emissiveColor = new Color3(0.5, 0.7, 0.3); // Green
+    foliage.material = foliageMaterial;
   }
 
   // Create game world

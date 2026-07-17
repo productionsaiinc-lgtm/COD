@@ -6,6 +6,8 @@ import { Enemy } from "./Enemy";
 import { InputManager } from "./InputManager";
 import { UIManager } from "./UIManager";
 import { Crosshair } from "./Crosshair";
+import { HUDOverlay } from "./HUDOverlay";
+import { WeaponModel } from "./WeaponModel";
 
 export class GameWorld {
   private scene: Scene;
@@ -14,9 +16,13 @@ export class GameWorld {
   private inputManager: InputManager;
   private uiManager: UIManager;
   private crosshair: Crosshair;
+  private hudOverlay: HUDOverlay;
   private camera: UniversalCamera;
   private canvas: HTMLCanvasElement;
   private isFiring = false;
+  private kills: number = 0;
+  private deaths: number = 0;
+  private weaponModel: WeaponModel | null = null;
 
   constructor(scene: Scene, camera: UniversalCamera, canvas: HTMLCanvasElement) {
     this.scene = scene;
@@ -25,6 +31,8 @@ export class GameWorld {
     this.inputManager = new InputManager(canvas);
     this.uiManager = new UIManager(scene);
     this.crosshair = new Crosshair();
+    this.hudOverlay = new HUDOverlay();
+    this.weaponModel = new WeaponModel(scene);
 
     // Set up mouse button listeners
     document.addEventListener("mousedown", (e) => {
@@ -99,13 +107,17 @@ export class GameWorld {
       }
     }
 
-    // Update UI
-    this.uiManager.updateHealth(this.player.getHealth(), this.player.getMaxHealth());
-    this.uiManager.updateAmmo(weapon.getAmmo().current, weapon.getAmmo().total);
-    this.uiManager.updateMinimap(this.player.getCamera().position, this.enemies.map((e) => e.getPosition()));
+    // Update weapon model
+    if (this.weaponModel) {
+      this.weaponModel.update(deltaTime);
+    }
 
-    // Draw crosshair
-    this.crosshair.draw();
+    // Update HUD overlay
+    this.hudOverlay.setHealth(this.player.getHealth(), this.player.getMaxHealth());
+    this.hudOverlay.setAmmo(weapon.getAmmo().current, weapon.getAmmo().current, weapon.getAmmo().total, weapon.getAmmo().total);
+    this.hudOverlay.setCompass(this.player.getCamera().rotation.y);
+    this.hudOverlay.setKills(this.kills, this.deaths);
+    this.hudOverlay.draw();
   }
 
   private checkCollision(pos1: Vector3, pos2: Vector3, distance = 0.5): boolean {
@@ -122,5 +134,9 @@ export class GameWorld {
     this.inputManager.dispose();
     this.uiManager.dispose();
     this.crosshair.dispose();
+    this.hudOverlay.dispose();
+    if (this.weaponModel) {
+      this.weaponModel.dispose();
+    }
   }
 }
