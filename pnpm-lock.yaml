@@ -16,6 +16,15 @@ importers:
 
   .:
     dependencies:
+      '@babylonjs/core':
+        specifier: ^9.17.0
+        version: 9.17.0
+      '@babylonjs/gui':
+        specifier: ^9.17.0
+        version: 9.17.0(@babylonjs/core@9.17.0)
+      '@babylonjs/loaders':
+        specifier: ^9.17.0
+        version: 9.17.0(@babylonjs/core@9.17.0)(babylonjs-gltf2interface@9.17.0)
       '@hookform/resolvers':
         specifier: ^5.2.2
         version: 5.2.2(react-hook-form@7.64.0(react@19.2.1))
@@ -331,6 +340,20 @@ packages:
   '@babel/types@7.28.4':
     resolution: {integrity: sha512-bkFqkLhh3pMBUQQkpVgWDWq/lqzc2678eUyDlTBhRqhCHFguYYGM0Efga7tYk4TogG/3x0EEl66/OQ+WGbWB/Q==}
     engines: {node: '>=6.9.0'}
+
+  '@babylonjs/core@9.17.0':
+    resolution: {integrity: sha512-+yXYuQC6l9FbVeGWtYd4mcY3IJsfDc/R5Re6YtVT1t3ox3WgfaOVYMTjlUcqrG35wp6FbIANqVcos5EPt/IF8A==}
+
+  '@babylonjs/gui@9.17.0':
+    resolution: {integrity: sha512-nYq0nRA3cTjImjjINOdmCXf9MbAnEzcZ8D9VpZJmZy0oHtrZxOukds9104XfUXhDH0oQqxlwGCkEbSkcxxcwiQ==}
+    peerDependencies:
+      '@babylonjs/core': ^9.0.0
+
+  '@babylonjs/loaders@9.17.0':
+    resolution: {integrity: sha512-Z0XiIzA+v4EJ1L2Miu39LN3gdQpFEuocTCc0NRFnFIC+f5X2D06UkYay1jF26PmKpPQFVSLjUBr1if3tXBLpVA==}
+    peerDependencies:
+      '@babylonjs/core': ^9.0.0
+      babylonjs-gltf2interface: ^9.0.0
 
   '@braintree/sanitize-url@7.1.1':
     resolution: {integrity: sha512-i1L7noDNxtFyL5DmZafWy1wRVhGehQmzZaz1HiN5e7iylJMSZR7ekOV7NsIqa5qBldlLrsKv4HbgFUVlQrz8Mw==}
@@ -1810,6 +1833,9 @@ packages:
 
   axios@1.12.2:
     resolution: {integrity: sha512-vMJzPewAlRyOgxV2dU0Cuz2O8zzzx9VYtbJOaBgXFeLc4IV/Eg50n4LowmehOOR61S8ZMpc2K5Sa7g6A4jfkUw==}
+
+  babylonjs-gltf2interface@9.17.0:
+    resolution: {integrity: sha512-nqiTh0w/9MODhsa4K4YWGRSXsGgUyPLevcexn4gYEsCxMSYQm48wm9NhXaw+DtvSQTtmh8JL0nqqFYNTyinACw==}
 
   bail@2.0.2:
     resolution: {integrity: sha512-0xO6mYd7JB2YesxDKplafRpsiOzPt9V02ddPCLbY1xYGPOX24NTyN50qnUxgCPcSoYMhKpAuBTjQoRZCAkUDRw==}
@@ -3661,6 +3687,17 @@ snapshots:
       '@babel/helper-string-parser': 7.27.1
       '@babel/helper-validator-identifier': 7.27.1
 
+  '@babylonjs/core@9.17.0': {}
+
+  '@babylonjs/gui@9.17.0(@babylonjs/core@9.17.0)':
+    dependencies:
+      '@babylonjs/core': 9.17.0
+
+  '@babylonjs/loaders@9.17.0(@babylonjs/core@9.17.0)(babylonjs-gltf2interface@9.17.0)':
+    dependencies:
+      '@babylonjs/core': 9.17.0
+      babylonjs-gltf2interface: 9.17.0
+
   '@braintree/sanitize-url@7.1.1': {}
 
   '@builder.io/jsx-loc-internals@0.0.1':
@@ -5057,6 +5094,8 @@ snapshots:
       proxy-from-env: 1.1.0
     transitivePeerDependencies:
       - debug
+
+  babylonjs-gltf2interface@9.17.0: {}
 
   bail@2.0.2: {}
 
