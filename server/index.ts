@@ -10,13 +10,10 @@ async function startServer() {
   const app = express();
   const server = createServer(app);
 
-  // In production (Render), files are in dist/public
-  // In development, files are in dist/public (from Vite)
   const staticPath = path.resolve(__dirname, "public");
 
   app.use(express.static(staticPath));
 
-  // SPA fallback - serve index.html for all routes
   app.get("*", (_req, res) => {
     res.sendFile(path.join(staticPath, "index.html"));
   });
