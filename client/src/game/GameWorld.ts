@@ -5,9 +5,6 @@ import { ParticleSystem } from "@babylonjs/core/Particles/particleSystem";
 import { Texture } from "@babylonjs/core/Materials/Textures/texture";
 import { Player } from "./Player";
 import { Enemy } from "./Enemy";
-import { InputManager } from "./InputManager";
-import { UIManager } from "./UIManager";
-import { HUDOverlay } from "./HUDOverlay";
 import { TouchControls } from "./TouchControls";
 import { GameModeManager } from "./GameModeManager";
 import { WeaponSystem } from "./WeaponSystem";
@@ -15,8 +12,11 @@ import { ClassSystem } from "./ClassSystem";
 import { BattleRoyaleManager } from "./BattleRoyaleManager";
 import { ZombiesManager } from "./ZombiesManager";
 import { DominationMode } from "./DominationMode";
+import { KillConfirmedMode } from "./KillConfirmedMode";
 import { DogTag } from "./DogTag";
 import { ObjectiveMarker } from "./ObjectiveMarker";
+import { Scoreboard } from "./Scoreboard";
+import { ProgressionSystem } from "./ProgressionSystem";
 
 export class GameWorld {
   private scene: Scene;
@@ -25,17 +25,16 @@ export class GameWorld {
   private dogTags: DogTag[] = [];
   private objectiveMarkers: ObjectiveMarker[] = [];
 
-  private inputManager: InputManager;
-  private uiManager: UIManager;
-  private hudOverlay: HUDOverlay;
   private touchControls: TouchControls;
-
   private gameModeManager: GameModeManager;
   private weaponSystem: WeaponSystem;
   private classSystem: ClassSystem;
   private brManager: BattleRoyaleManager;
   private zombiesManager: ZombiesManager;
   private dominationMode: DominationMode | null = null;
+  private killConfirmedMode: KillConfirmedMode | null = null;
+  private scoreboard: Scoreboard;
+  private progression: ProgressionSystem;
 
   private camera: UniversalCamera;
   private canvas: HTMLCanvasElement;
@@ -46,16 +45,14 @@ export class GameWorld {
     this.camera = camera;
     this.canvas = canvas;
 
-    this.inputManager = new InputManager(canvas);
-    this.uiManager = new UIManager(scene);
-    this.hudOverlay = new HUDOverlay();
     this.touchControls = new TouchControls(document.body);
-
     this.gameModeManager = new GameModeManager('team_deathmatch');
     this.weaponSystem = new WeaponSystem();
     this.classSystem = new ClassSystem();
     this.brManager = new BattleRoyaleManager();
     this.zombiesManager = new ZombiesManager();
+    this.scoreboard = new Scoreboard();
+    this.progression = new ProgressionSystem();
 
     this.initializeGame();
     this.setupMobileButtons();
@@ -63,29 +60,20 @@ export class GameWorld {
   }
 
   private initializeGame() {
-    this.player = new Player(this.camera, this.scene, this.inputManager);
+    this.player = new Player(this.camera, this.scene, null as any);
 
     for (let i = 0; i < 6; i++) {
       const angle = (i / 6) * Math.PI * 2;
-      const position = new Vector3(Math.cos(angle) * 10, 1, Math.sin(angle) * 10);
-      const enemy = new Enemy(this.scene, position, this.player);
-      this.enemies.push(enemy);
+      const pos = new Vector3(Math.cos(angle) * 10, 1, Math.sin(angle) * 10);
+      this.enemies.push(new Enemy(this.scene, pos, this.player));
     }
 
     const mode = this.gameModeManager.getCurrentMode();
 
-    if (mode === 'domination') {
-      this.dominationMode = new DominationMode(this.gameModeManager);
-      this.dominationMode.initializeObjectives(this.scene);
-    }
-
-    if (mode === 'battle_royale') {
-      this.brManager.startMatch();
-    }
-
-    if (mode === 'zombies') {
-      this.zombiesManager.startWave();
-    }
+    if (mode === 'domination') this.dominationMode = new DominationMode(this.gameModeManager);
+    if (mode === 'kill_confirmed') this.killConfirmedMode = new KillConfirmedMode(this.gameModeManager);
+    if (mode === 'battle_royale') this.brManager.startMatch();
+    if (mode === 'zombies') this.zombiesManager.startWave();
   }
 
   private setupMobileButtons() {
@@ -112,66 +100,36 @@ export class GameWorld {
   private createSnowParticles() {
     const snow = new ParticleSystem("snow", 4000, this.scene);
     snow.particleTexture = new Texture("https://assets.babylonjs.com/textures/flare.png", this.scene);
-
     snow.emitter = new Vector3(0, 40, 0);
     snow.minEmitBox = new Vector3(-100, 0, -100);
     snow.maxEmitBox = new Vector3(100, 0, 100);
-
     snow.color1 = new Color4(1, 1, 1, 0.9);
     snow.color2 = new Color4(0.9, 0.95, 1, 0.6);
-    snow.colorDead = new Color4(1, 1, 1, 0);
-
     snow.minSize = 0.08;
     snow.maxSize = 0.3;
-    snow.minLifeTime = 4;
-    snow.maxLifeTime = 7;
     snow.emitRate = 600;
-
     snow.direction1 = new Vector3(-0.8, -2.5, -0.8);
     snow.direction2 = new Vector3(0.8, -2.5, 0.8);
     snow.gravity = new Vector3(0, -2, 0);
     snow.start();
   }
 
-  public createMuzzleFlash(position: Vector3, direction: Vector3) {
-    const flash = new ParticleSystem("muzzleFlash", 60, this.scene);
-    flash.particleTexture = new Texture("https://assets.babylonjs.com/textures/flare.png", this.scene);
-
-    flash.emitter = position;
-    flash.color1 = new Color4(1, 0.9, 0.5, 1);
-    flash.color2 = new Color4(1, 0.6, 0.2, 1);
-    flash.colorDead = new Color4(1, 0.3, 0, 0);
-
-    flash.minSize = 0.4;
-    flash.maxSize = 1.4;
-    flash.minLifeTime = 0.04;
-    flash.maxLifeTime = 0.1;
-    flash.emitRate = 0;
-
-    flash.direction1 = direction.scale(4);
-    flash.direction2 = direction.scale(8);
-    flash.start();
-
-    setTimeout(() => flash.dispose(), 120);
-  }
-
   update(deltaTime: number) {
     if (!this.player) return;
-
     this.player.update(deltaTime);
 
-    const moveVector = this.touchControls.getMovementVector();
-    const lookDelta = this.touchControls.getLookDelta();
+    const move = this.touchControls.getMovementVector();
+    const look = this.touchControls.getLookDelta();
 
-    if (moveVector.x !== 0 || moveVector.y !== 0) {
+    if (move.x !== 0 || move.y !== 0) {
       const forward = this.camera.getDirection(Vector3.Forward());
       const right = this.camera.getDirection(Vector3.Right());
-      const moveDir = forward.scale(moveVector.y).add(right.scale(moveVector.x)).normalize();
-      this.player.applyMovement(moveDir);
+      const dir = forward.scale(move.y).add(right.scale(move.x)).normalize();
+      this.player.applyMovement(dir);
     }
 
-    if (lookDelta.x !== 0 || lookDelta.y !== 0) {
-      this.player.applyLook(lookDelta.x * 0.04, lookDelta.y * 0.04);
+    if (look.x !== 0 || look.y !== 0) {
+      this.player.applyLook(look.x * 0.04, look.y * 0.04);
     }
 
     if (this.isFiring) {
@@ -182,10 +140,10 @@ export class GameWorld {
     for (let i = this.enemies.length - 1; i >= 0; i--) {
       const enemy = this.enemies[i];
       enemy.update(deltaTime, this.player);
-
       if (!enemy.isAlive()) {
-        const dogTag = new DogTag(this.scene, enemy.getPosition());
-        this.dogTags.push(dogTag);
+        if (this.killConfirmedMode) this.killConfirmedMode.onEnemyKilled(this.scene, enemy.getPosition());
+        this.scoreboard.addKill();
+        this.progression.addXP(50);
         enemy.dispose();
         this.enemies.splice(i, 1);
       }
@@ -196,25 +154,22 @@ export class GameWorld {
     for (let i = this.dogTags.length - 1; i >= 0; i--) {
       const tag = this.dogTags[i];
       tag.update(playerPos, () => {
-        this.gameModeManager.addScore("player", 1);
+        this.scoreboard.addKill();
+        this.progression.addXP(25);
       });
       if (tag.collected) this.dogTags.splice(i, 1);
     }
 
-    if (this.dominationMode) {
-      this.objectiveMarkers.forEach(marker => marker.update(playerPos));
-    }
+    if (this.killConfirmedMode) this.killConfirmedMode.update(playerPos);
+    if (this.dominationMode) this.dominationMode.update(playerPos);
 
     const weapon = this.player.getWeapon();
-    this.hudOverlay.setHealth(this.player.getHealth(), this.player.getMaxHealth());
-    this.hudOverlay.setAmmo(weapon.getAmmo().current, weapon.getAmmo().total);
-    this.hudOverlay.draw();
+    // HUD update would go here
   }
 
   dispose() {
     this.touchControls.dispose();
     this.enemies.forEach(e => e.dispose());
     this.dogTags.forEach(d => d.dispose());
-    this.objectiveMarkers.forEach(o => o.dispose());
   }
 }
