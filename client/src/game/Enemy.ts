@@ -1,73 +1,55 @@
-import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 import { Scene } from "@babylonjs/core/scene";
+import { Vector3 } from "@babylonjs/core/Maths/math.vector";
+import { Mesh } from "@babylonjs/core/Meshes/mesh";
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial";
 import { Color3 } from "@babylonjs/core/Maths/math.color";
 import { Player } from "./Player";
 
 export class Enemy {
-  private scene: Scene;
-  private mesh: any;
-  private position: Vector3;
-  private health = 50;
-  private maxHealth = 50;
-  private moveSpeed = 0.08;
-  private attackRange = 3;
-  private attackCooldown = 2;
-  private lastAttackTime = 0;
-  private player: Player;
-  private detectionRange = 10;
+  private mesh: Mesh;
+  private health: number = 100;
+  private speed: number = 0.06;
+  private attackRange: number = 2.5;
+  private lastAttackTime: number = 0;
 
-  constructor(scene: Scene, position: Vector3, player: Player) {
-    this.scene = scene;
-    this.position = position.clone();
-    this.player = player;
+  constructor(scene: Scene, position: Vector3, private player: Player) {
+    this.mesh = MeshBuilder.CreateBox("enemy", { size: 1.8 }, scene);
+    this.mesh.position = position.clone();
 
-    // Create enemy mesh (cube for now)
-    this.mesh = MeshBuilder.CreateBox("enemy", { size: 0.8 }, scene);
-    this.mesh.position = this.position.clone();
-
-    // Create enemy material
-    const material = new StandardMaterial("enemyMaterial", scene);
-    material.emissiveColor = new Color3(1, 0, 0);
+    const material = new StandardMaterial("enemyMat", scene);
+    material.diffuseColor = new Color3(0.85, 0.2, 0.2);
     this.mesh.material = material;
   }
 
   update(deltaTime: number, player: Player) {
-    const playerPos = player.getCamera().position;
-    const distanceToPlayer = Vector3.Distance(this.position, playerPos);
+    if (!this.isAlive()) return;
 
-    // Check if player is in detection range
-    if (distanceToPlayer < this.detectionRange) {
-      // Move towards player
-      const direction = playerPos.subtract(this.position).normalize();
-      this.position.addInPlace(direction.scale(this.moveSpeed));
+    const playerPos = player.getPosition();
+    const direction = playerPos.subtract(this.mesh.position).normalize();
 
-      // Attack if in range
-      if (distanceToPlayer < this.attackRange) {
-        const now = performance.now() / 1000;
-        if (now - this.lastAttackTime > this.attackCooldown) {
-          this.attack(player);
-          this.lastAttackTime = now;
-        }
+    // Simple pathfinding / movement toward player
+    this.mesh.position = this.mesh.position.add(direction.scale(this.speed));
+
+    // Attack player when close
+    const distance = Vector3.Distance(this.mesh.position, playerPos);
+    if (distance < this.attackRange) {
+      const now = Date.now();
+      if (now - this.lastAttackTime > 1200) {
+        player.takeDamage(12);
+        this.lastAttackTime = now;
       }
     }
 
-    // Update mesh position
-    this.mesh.position = this.position.clone();
-  }
-
-  private attack(player: Player) {
-    // Deal damage to player
-    player.takeDamage(10);
+    // Face the player
+    this.mesh.lookAt(playerPos);
   }
 
   takeDamage(amount: number) {
-    this.health = Math.max(0, this.health - amount);
-  }
-
-  getHealth(): number {
-    return this.health;
+    this.health -= amount;
+    if (this.health <= 0) {
+      this.health = 0;
+    }
   }
 
   isAlive(): boolean {
@@ -75,10 +57,10 @@ export class Enemy {
   }
 
   getPosition(): Vector3 {
-    return this.position.clone();
+    return this.mesh.position;
   }
 
   dispose() {
-    this.mesh.dispose();
+    if (this.mesh) this.mesh.dispose();
   }
 }
