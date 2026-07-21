@@ -231,6 +231,9 @@ export default defineConfig({
       ".manuscomputer.ai",
       ".manusvm.computer",
       "localhost",
+      "cod-b6si.onrender.com",
+      "onrender.com",
+      "0.0.0.0",
       "127.0.0.1",
     ],
     fs: {
