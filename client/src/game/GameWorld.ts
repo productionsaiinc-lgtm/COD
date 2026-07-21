@@ -1,8 +1,6 @@
 import { Scene } from "@babylonjs/core/scene";
 import { Vector3, Color4 } from "@babylonjs/core/Maths/math";
 import { UniversalCamera } from "@babylonjs/core/Cameras/universalCamera";
-import { ParticleSystem } from "@babylonjs/core/Particles/particleSystem";
-import { Texture } from "@babylonjs/core/Materials/Textures/texture";
 import { Player } from "./Player";
 import { Enemy } from "./Enemy";
 import { TouchControls } from "./TouchControls";
@@ -17,6 +15,8 @@ import { DogTag } from "./DogTag";
 import { ObjectiveMarker } from "./ObjectiveMarker";
 import { Scoreboard } from "./Scoreboard";
 import { ProgressionSystem } from "./ProgressionSystem";
+import { ParticleEffects } from "./ParticleEffects";
+import { LODManager } from "./LODManager";
 
 export class GameWorld {
   private scene: Scene;
@@ -35,6 +35,8 @@ export class GameWorld {
   private killConfirmedMode: KillConfirmedMode | null = null;
   private scoreboard: Scoreboard;
   private progression: ProgressionSystem;
+  private particleEffects: ParticleEffects;
+  private lodManager: LODManager;
 
   private camera: UniversalCamera;
   private canvas: HTMLCanvasElement;
@@ -53,10 +55,14 @@ export class GameWorld {
     this.zombiesManager = new ZombiesManager();
     this.scoreboard = new Scoreboard();
     this.progression = new ProgressionSystem();
+    this.particleEffects = new ParticleEffects(this.scene);
+    this.lodManager = new LODManager(new Vector3(0, 0, 0));
 
     this.initializeGame();
     this.setupMobileButtons();
-    this.createSnowParticles();
+
+    // Start with snow by default (COD Mobile style)
+    this.particleEffects.createSnow();
   }
 
   private initializeGame() {
@@ -97,23 +103,6 @@ export class GameWorld {
     reloadBtn.addEventListener('touchstart', () => { if (this.player) this.player.getWeapon().reload(); });
   }
 
-  private createSnowParticles() {
-    const snow = new ParticleSystem("snow", 4000, this.scene);
-    snow.particleTexture = new Texture("https://assets.babylonjs.com/textures/flare.png", this.scene);
-    snow.emitter = new Vector3(0, 40, 0);
-    snow.minEmitBox = new Vector3(-100, 0, -100);
-    snow.maxEmitBox = new Vector3(100, 0, 100);
-    snow.color1 = new Color4(1, 1, 1, 0.9);
-    snow.color2 = new Color4(0.9, 0.95, 1, 0.6);
-    snow.minSize = 0.08;
-    snow.maxSize = 0.3;
-    snow.emitRate = 600;
-    snow.direction1 = new Vector3(-0.8, -2.5, -0.8);
-    snow.direction2 = new Vector3(0.8, -2.5, 0.8);
-    snow.gravity = new Vector3(0, -2, 0);
-    snow.start();
-  }
-
   update(deltaTime: number) {
     if (!this.player) return;
     this.player.update(deltaTime);
@@ -150,6 +139,7 @@ export class GameWorld {
     }
 
     const playerPos = this.player.getPosition();
+    this.lodManager.update(playerPos);
 
     for (let i = this.dogTags.length - 1; i >= 0; i--) {
       const tag = this.dogTags[i];
