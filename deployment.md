@@ -4,6 +4,17 @@ This document explains how to deploy the COD Mobile FPS project using **Docker**
 
 ---
 
+## GitHub Actions CI
+
+A CI workflow (`.github/workflows/ci.yml`) has been added. It automatically:
+
+- Builds the project
+- Runs type checking
+
+This runs on every push and pull request to `main`.
+
+---
+
 ## 1. Docker Deployment
 
 ### Prerequisites
